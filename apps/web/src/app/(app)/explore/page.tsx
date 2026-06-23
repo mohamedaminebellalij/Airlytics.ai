@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, Sliders, TrendingDown, Star } from 'lucide-react';
+import { Globe, Sliders, Star } from 'lucide-react';
 import { mockDestinations } from '@/lib/mock-data';
 import { VerdictBadge } from '@/components/ui/Badge';
 import { formatPrice } from '@/lib/utils';

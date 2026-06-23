@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { TrendingDown, TrendingUp, Bell, CheckCircle, AlertCircle, Info, PiggyBank, Target, Activity } from 'lucide-react';
+import { TrendingDown, Bell, AlertCircle, Info, PiggyBank, Target, Activity } from 'lucide-react';
 import { mockTrackedFlights, mockAlerts } from '@/lib/mock-data';
 import { VerdictBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';

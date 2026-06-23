@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import type { Metadata } from 'next';
 import { SearchForm } from '@/components/predict/SearchForm';
 import { VerdictCard } from '@/components/predict/VerdictCard';
 import { PriceChart } from '@/components/predict/PriceChart';
