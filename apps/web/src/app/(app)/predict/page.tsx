@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { SearchForm } from '@/components/predict/SearchForm';
 import { VerdictCard } from '@/components/predict/VerdictCard';
@@ -8,7 +9,8 @@ import { PriceChart } from '@/components/predict/PriceChart';
 import { FeatureImportance } from '@/components/predict/FeatureImportance';
 import { BestBuyWindow } from '@/components/predict/BestBuyWindow';
 import { TrackPanel } from '@/components/predict/TrackPanel';
-import { mockPrediction } from '@/lib/mock-data';
+import { mockPrediction, generatePrediction } from '@/lib/mock-data';
+import type { PredictionResult } from '@airlytics/types';
 
 const container = {
   hidden: { opacity: 0 },
@@ -20,22 +22,26 @@ const item = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
 };
 
-export default function PredictPage() {
+function PredictContent() {
+  const searchParams = useSearchParams();
+  const initialOrigin = searchParams.get('from') ?? 'CDG';
+  const initialDestination = searchParams.get('to') ?? 'JFK';
+
   const [loading, setLoading] = useState(false);
-  const prediction = mockPrediction;
+  const [prediction, setPrediction] = useState<PredictionResult>(mockPrediction);
   const [analyzed, setAnalyzed] = useState(true);
 
-  const handleSearch = async () => {
+  const handleSearch = async (params: { origin: string; destination: string; date: string; airline: string }) => {
     setLoading(true);
     setAnalyzed(false);
     await new Promise(r => setTimeout(r, 1400));
+    setPrediction(generatePrediction(params));
     setLoading(false);
     setAnalyzed(true);
   };
 
   return (
     <div className="max-w-[1200px] mx-auto p-6 space-y-5">
-      {/* Page header */}
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Prédiction de prix
@@ -45,10 +51,13 @@ export default function PredictPage() {
         </p>
       </div>
 
-      {/* Search form */}
-      <SearchForm onSearch={handleSearch} loading={loading} />
+      <SearchForm
+        initialOrigin={initialOrigin}
+        initialDestination={initialDestination}
+        onSearch={handleSearch}
+        loading={loading}
+      />
 
-      {/* Results */}
       {analyzed && (
         <motion.div
           variants={container}
@@ -56,12 +65,10 @@ export default function PredictPage() {
           animate="show"
           className="grid grid-cols-12 gap-5"
         >
-          {/* Verdict card — full width */}
           <motion.div variants={item} className="col-span-12">
             <VerdictCard prediction={prediction} />
           </motion.div>
 
-          {/* Price chart — 8 cols */}
           <motion.div variants={item} className="col-span-12 lg:col-span-8">
             <PriceChart
               history={prediction.priceHistory}
@@ -70,22 +77,27 @@ export default function PredictPage() {
             />
           </motion.div>
 
-          {/* Feature importance — 4 cols */}
           <motion.div variants={item} className="col-span-12 lg:col-span-4">
             <FeatureImportance contributions={prediction.featureContributions} />
           </motion.div>
 
-          {/* Best buy window — 8 cols */}
           <motion.div variants={item} className="col-span-12 lg:col-span-8">
             <BestBuyWindow prediction={prediction} />
           </motion.div>
 
-          {/* Track panel — 4 cols */}
           <motion.div variants={item} className="col-span-12 lg:col-span-4">
             <TrackPanel prediction={prediction} />
           </motion.div>
         </motion.div>
       )}
     </div>
+  );
+}
+
+export default function PredictPage() {
+  return (
+    <Suspense fallback={null}>
+      <PredictContent />
+    </Suspense>
   );
 }

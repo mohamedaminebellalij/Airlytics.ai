@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { TrendingDown, Bell, AlertCircle, Info, PiggyBank, Target, Activity } from 'lucide-react';
 import { mockTrackedFlights, mockAlerts } from '@/lib/mock-data';
 import { VerdictBadge } from '@/components/ui/Badge';
@@ -28,6 +29,7 @@ const alertIcons = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   return (
     <div className="max-w-[1200px] mx-auto p-6 space-y-6">
       {/* Header */}
@@ -79,6 +81,7 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.07 }}
                   className="flex items-center gap-4 py-3 transition-colors cursor-pointer rounded-md px-2"
+                  onClick={() => router.push(`/predict?from=${flight.origin}&to=${flight.destination}`)}
                   style={{ borderBottom: i < mockTrackedFlights.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}
                 >
                   {/* Route */}

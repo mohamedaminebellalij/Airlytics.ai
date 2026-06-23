@@ -114,6 +114,7 @@ function FlightCard({ flight, rank }: { flight: Flight; rank: number }) {
 
 export default function ComparePage() {
   const [sortBy, setSortBy] = useState<'price' | 'smart' | 'time'>('smart');
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const sorted = [...mockFlights].sort((a, b) => {
     if (sortBy === 'price') return a.price - b.price;
@@ -125,7 +126,9 @@ export default function ComparePage() {
     <div className="max-w-[900px] mx-auto p-6 space-y-5">
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Comparer les vols</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>CDG → JFK · 16 juillet 2026</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+          CDG → JFK · {selectedDay !== null ? formatDate(mockCalendar[selectedDay].date) : '16 juillet 2026'}
+        </p>
       </div>
 
       {/* Price calendar */}
@@ -141,9 +144,10 @@ export default function ComparePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
               className="flex flex-col items-center p-2.5 rounded-md cursor-pointer transition-all"
+              onClick={() => setSelectedDay(selectedDay === i ? null : i)}
               style={{
-                background: day.isLowest ? 'var(--buy-dim)' : 'var(--bg-base)',
-                border: `1px solid ${day.isLowest ? 'var(--buy-border)' : 'var(--border-subtle)'}`,
+                background: selectedDay === i ? 'var(--accent-blue-dim)' : day.isLowest ? 'var(--buy-dim)' : 'var(--bg-base)',
+                border: `1px solid ${selectedDay === i ? 'var(--border-accent)' : day.isLowest ? 'var(--buy-border)' : 'var(--border-subtle)'}`,
               }}
             >
               <span className="text-[10px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>

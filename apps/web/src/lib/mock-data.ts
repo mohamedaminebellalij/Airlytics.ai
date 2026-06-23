@@ -257,6 +257,64 @@ export const mockABTests: ABTest[] = [
 
 // ─── Chat Messages ────────────────────────────────────────────────────────────
 
+// ─── Dynamic Prediction Generator ────────────────────────────────────────────
+
+export function generatePrediction(params: {
+  origin: string;
+  destination: string;
+  date: string;
+  airline: string;
+}): PredictionResult {
+  const { origin, destination, date, airline } = params;
+  const seed = `${origin}${destination}`.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const trends = ['BUY', 'WAIT', 'RISK'] as const;
+  const trend = trends[seed % 3];
+  const basePrice = 150 + (seed % 12) * 70;
+  const prob = 55 + (seed % 35);
+  const conf = 65 + (seed % 25);
+  const absDelta = 4 + (seed % 18);
+  const expectedDelta = trend === 'BUY' ? -absDelta : trend === 'RISK' ? absDelta : (seed % 5) - 2;
+  const daysUntilDep = Math.max(7, Math.ceil((new Date(date).getTime() - Date.now()) / 86400000));
+  const h = generatePriceHistory(basePrice, 90, 0.035, trend === 'BUY' ? -0.001 : trend === 'RISK' ? 0.001 : 0);
+  const lastP = h[h.length - 1].price;
+  const fc = generateForecast(lastP, 21, trend === 'BUY' ? -1 : trend === 'RISK' ? 1 : 0, 0.03);
+  const airlineName = airline === 'Toutes compagnies'
+    ? (['Air France', 'Lufthansa', 'British Airways'] as const)[seed % 3]
+    : airline;
+
+  return {
+    route: `${origin} → ${destination}`,
+    origin,
+    destination,
+    departureDate: date,
+    airline: airlineName,
+    trend,
+    probability: prob,
+    confidence: conf,
+    currentPrice: lastP,
+    expectedDelta,
+    bestBuyWindow: {
+      start: addDays(new Date(), 3).toISOString().split('T')[0],
+      end:   addDays(new Date(), Math.min(8, daysUntilDep - 1)).toISOString().split('T')[0],
+      expectedPrice: Math.round(lastP * (1 + expectedDelta / 100)),
+      saving: Math.round(lastP * Math.abs(expectedDelta) / 100),
+    },
+    featureContributions: [
+      { name: 'Jours avant départ',     value: 0.28,  impact: 'positive', description: `${daysUntilDep} jours — analyse en cours` },
+      { name: 'Fenêtre de réservation', value: 0.21,  impact: trend === 'BUY' ? 'positive' : 'negative', description: 'Basé sur historique 24 mois' },
+      { name: 'Saisonnalité',           value: trend === 'BUY' ? 0.17 : -0.15, impact: trend === 'BUY' ? 'positive' : 'negative', description: 'Période analysée' },
+      { name: 'Carburant (kérosène)',   value: -0.11, impact: 'negative', description: 'Légère volatilité du marché' },
+      { name: 'Volume de recherche',    value: 0.08,  impact: 'neutral',  description: `Concurrence sur ${origin}–${destination}` },
+      { name: 'Popularité route',       value: -0.06, impact: 'neutral',  description: `Route ${origin}–${destination}` },
+    ],
+    priceHistory: h,
+    priceForecast: fc,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ─── Chat Messages ────────────────────────────────────────────────────────────
+
 export const mockMessages: ChatMessage[] = [
   {
     id:'m1', role:'user',

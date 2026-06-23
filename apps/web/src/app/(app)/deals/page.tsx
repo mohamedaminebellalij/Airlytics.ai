@@ -131,8 +131,13 @@ function DealCard({ deal }: { deal: Deal }) {
           ))}
         </div>
 
-        <Button variant="success" size="sm" fullWidth>
-          Voir ce deal
+        <Button
+          variant="success"
+          size="sm"
+          fullWidth
+          onClick={() => window.open(`https://www.google.com/travel/flights/search?q=vols+${deal.origin}+${deal.destination}`, '_blank')}
+        >
+          Voir ce deal →
         </Button>
       </div>
     </motion.div>

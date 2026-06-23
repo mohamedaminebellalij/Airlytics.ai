@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, Sliders, Star } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { mockDestinations } from '@/lib/mock-data';
 import { VerdictBadge } from '@/components/ui/Badge';
 import { formatPrice } from '@/lib/utils';
@@ -30,6 +31,7 @@ function SparkLine({ data }: { data: { price: number }[] }) {
 }
 
 function DestCard({ dest, delay = 0 }: { dest: Destination; delay?: number }) {
+  const router = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -37,6 +39,7 @@ function DestCard({ dest, delay = 0 }: { dest: Destination; delay?: number }) {
       transition={{ delay, duration: 0.35 }}
       whileHover={{ y: -4 }}
       className="card card-hover overflow-hidden cursor-pointer"
+      onClick={() => router.push(`/predict?from=CDG&to=${dest.iata}`)}
     >
       {/* Top color band */}
       <div

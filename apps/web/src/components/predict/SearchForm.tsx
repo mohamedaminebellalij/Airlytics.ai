@@ -6,15 +6,17 @@ import { ArrowLeftRight, CalendarDays, Plane } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface SearchFormProps {
+  initialOrigin?: string;
+  initialDestination?: string;
   onSearch?: (params: { origin: string; destination: string; date: string; airline: string }) => void;
   loading?: boolean;
 }
 
 const airlines = ['Toutes compagnies', 'Air France', 'Delta', 'British Airways', 'Emirates', 'Lufthansa', 'United'];
 
-export function SearchForm({ onSearch, loading }: SearchFormProps) {
-  const [origin, setOrigin] = useState('CDG');
-  const [destination, setDestination] = useState('JFK');
+export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', onSearch, loading }: SearchFormProps) {
+  const [origin, setOrigin] = useState(initialOrigin);
+  const [destination, setDestination] = useState(initialDestination);
   const [date, setDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() + 23);
