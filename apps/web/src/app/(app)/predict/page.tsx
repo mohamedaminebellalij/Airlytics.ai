@@ -22,7 +22,7 @@ const item = {
 
 export default function PredictPage() {
   const [loading, setLoading] = useState(false);
-  const [prediction, setPrediction] = useState(mockPrediction);
+  const prediction = mockPrediction;
   const [analyzed, setAnalyzed] = useState(true);
 
   const handleSearch = async () => {

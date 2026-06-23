@@ -5,7 +5,7 @@ import { TrendingDown, Bell, AlertCircle, Info, PiggyBank, Target, Activity } fr
 import { mockTrackedFlights, mockAlerts } from '@/lib/mock-data';
 import { VerdictBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';
-import { formatPrice, formatPercent, formatDate } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
 
 function Sparkline({ data, trend }: { data: number[]; trend: 'BUY' | 'WAIT' | 'RISK' }) {
@@ -34,7 +34,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Dashboard</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-          Vue d'ensemble · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          Vue d&apos;ensemble · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
       </div>
 
@@ -136,7 +136,7 @@ export default function DashboardPage() {
           <div className="card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                Feed d'alertes
+                Feed d&apos;alertes
               </h3>
               <span
                 className="text-[10px] font-mono px-2 py-0.5 rounded-full"

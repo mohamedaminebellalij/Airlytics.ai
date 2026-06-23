@@ -34,7 +34,7 @@ export function BestBuyWindow({ prediction }: BestBuyWindowProps) {
       <div className="flex items-start justify-between mb-5">
         <div>
           <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-            Meilleure fenêtre d'achat
+            Meilleure fenêtre d&apos;achat
           </h3>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             {formatDate(bestBuyWindow.start)} → {formatDate(bestBuyWindow.end)}
@@ -88,7 +88,7 @@ export function BestBuyWindow({ prediction }: BestBuyWindowProps) {
       </div>
 
       <p className="mt-3 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-        Zone verte = fenêtre optimale d'achat selon l'IA
+        Zone verte = fenêtre optimale d&apos;achat selon l&apos;IA
       </p>
     </div>
   );

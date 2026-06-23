@@ -8,7 +8,7 @@ import { VerdictBadge } from '@/components/ui/Badge';
 import { formatPrice } from '@/lib/utils';
 import type { Destination } from '@airlytics/types';
 import {
-  ResponsiveContainer, LineChart, Line, Tooltip,
+  ResponsiveContainer, LineChart, Line,
 } from 'recharts';
 
 function SparkLine({ data }: { data: { price: number }[] }) {
@@ -208,7 +208,7 @@ export default function ExplorePage() {
       {filtered.length === 0 ? (
         <div className="card p-12 text-center" style={{ color: 'var(--text-secondary)' }}>
           <Globe size={32} className="mx-auto mb-3 opacity-40" />
-          <p>Aucune destination dans ce budget. Essayez d'augmenter le filtre.</p>
+          <p>Aucune destination dans ce budget. Essayez d&apos;augmenter le filtre.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

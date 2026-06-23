@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { PredictionResult } from '@airlytics/types';
 import { formatPrice, formatPercent, getTrendColor } from '@/lib/utils';

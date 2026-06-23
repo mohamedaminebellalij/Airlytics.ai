@@ -69,7 +69,7 @@ export function TrackPanel({ prediction }: TrackPanelProps) {
             <div>
               <label className="text-xs font-semibold uppercase tracking-wide block mb-2"
                      style={{ color: 'var(--text-muted)' }}>
-                M'alerter sous
+                M&apos;alerter sous
               </label>
               <div className="flex items-center gap-3">
                 <input

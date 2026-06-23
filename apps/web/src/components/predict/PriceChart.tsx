@@ -2,7 +2,7 @@
 
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ReferenceLine, ReferenceArea,
+  CartesianGrid, Tooltip, ReferenceLine,
 } from 'recharts';
 import type { PricePoint, ForecastPoint } from '@airlytics/types';
 import { formatPrice, formatDateShort } from '@/lib/utils';

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Clock, Shield, AlertTriangle } from 'lucide-react';
 import { mockDeals } from '@/lib/mock-data';
-import { VerdictBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/utils';
 import type { Deal, DealType } from '@airlytics/types';

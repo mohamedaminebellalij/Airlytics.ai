@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plane, Clock, Wifi, Luggage, Star } from 'lucide-react';
+import { Clock, Wifi, Luggage } from 'lucide-react';
 import { mockFlights, mockCalendar } from '@/lib/mock-data';
 import { VerdictBadge, ProbabilityBadge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { formatPrice, formatDate, formatPercent } from '@/lib/utils';
 import type { Flight } from '@airlytics/types';
 

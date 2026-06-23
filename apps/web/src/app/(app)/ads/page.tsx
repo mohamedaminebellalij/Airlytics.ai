@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Megaphone, TrendingUp, Eye, MousePointer, DollarSign, BarChart3 } from 'lucide-react';
+import { Megaphone, Eye, MousePointer, DollarSign, BarChart3 } from 'lucide-react';
 import { mockCampaigns, mockInventory } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';

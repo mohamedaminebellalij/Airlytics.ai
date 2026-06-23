@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ShieldCheck, Activity, FlaskConical, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Activity, FlaskConical, Users, TrendingUp } from 'lucide-react';
 import { mockModelMetrics, mockPredictionLogs, mockABTests } from '@/lib/mock-data';
 import { VerdictBadge, StatusBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';

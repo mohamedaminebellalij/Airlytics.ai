@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Send, Bot, User, TrendingDown, TrendingUp, Compass } from 'lucide-react';
 import { mockMessages } from '@/lib/mock-data';
 import type { ChatMessage, VerdictChip } from '@airlytics/types';
