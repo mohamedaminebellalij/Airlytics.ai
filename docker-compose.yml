@@ -1,0 +1,142 @@
+version: '3.9'
+
+services:
+  # ── Frontend ──────────────────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_AI_URL=http://localhost:8000
+    depends_on:
+      - api
+    networks:
+      - airlytics
+
+  # ── API Gateway (NestJS) ──────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=postgresql://airlytics:secret@postgres:5432/airlytics
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+      - AI_SERVICE_URL=http://ai:8000
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    networks:
+      - airlytics
+
+  # ── AI Service (FastAPI) ──────────────────────────────────────────────────────
+  ai:
+    build:
+      context: ./services/ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://airlytics:secret@postgres:5432/airlytics
+      - TIMESCALE_URL=postgresql://airlytics:secret@timescaledb:5432/airlytics_ts
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      - postgres
+      - timescaledb
+      - redis
+      - kafka
+    networks:
+      - airlytics
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: airlytics
+      POSTGRES_USER: airlytics
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - airlytics
+
+  # ── TimescaleDB ───────────────────────────────────────────────────────────────
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_DB: airlytics_ts
+      POSTGRES_USER: airlytics
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - airlytics
+
+  # ── Redis ─────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - airlytics
+
+  # ── Kafka + Zookeeper ─────────────────────────────────────────────────────────
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - airlytics
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - airlytics
+
+  # ── MLflow ────────────────────────────────────────────────────────────────────
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.17.0
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri postgresql://airlytics:secret@postgres:5432/airlytics_mlflow
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    networks:
+      - airlytics
+
+volumes:
+  postgres_data:
+  timescale_data:
+  redis_data:
+
+networks:
+  airlytics:
+    driver: bridge
