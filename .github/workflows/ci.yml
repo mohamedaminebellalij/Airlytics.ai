@@ -11,18 +11,20 @@ jobs:
   web:
     name: Web — Lint & Type Check
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci --workspace=apps/web
-      - run: npm run lint
-      - run: npm run type-check
+      # Install all workspace packages from the monorepo root
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+        working-directory: apps/web
+      - name: Type Check
+        run: npm run type-check
+        working-directory: apps/web
 
   # ── Web Build ──────────────────────────────────────────────────────────────
   web-build:
@@ -36,7 +38,9 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx turbo build --filter=@airlytics/web
+      - name: Build
+        run: npm run build
+        working-directory: apps/web
 
   # ── AI Service (Python) ────────────────────────────────────────────────────
   ai:
