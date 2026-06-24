@@ -279,7 +279,7 @@ export const mockABTests: ABTest[] = [
 // ─── Dynamic Prediction Generator ────────────────────────────────────────────
 
 // Route-aware base price ranges [min, max] in EUR (one-way equivalent used for A/R)
-const ROUTE_PRICE_RANGES: Record<string, [number, number]> = {
+export const ROUTE_PRICE_RANGES: Record<string, [number, number]> = {
   'Europe_Europe':    [45,  160],
   'Europe_Afrique':   [80,  220],
   'Afrique_Europe':   [80,  220],
@@ -297,7 +297,7 @@ const ROUTE_PRICE_RANGES: Record<string, [number, number]> = {
   'Océanie_Europe':   [850, 1300],
 };
 
-function getRouteBasePrice(origin: string, dest: string, seed: number): number {
+export function getRouteBasePrice(origin: string, dest: string, seed: number): number {
   const oAp = findAirport(origin);
   const dAp = findAirport(dest);
   const oRegion = oAp?.region ?? 'Europe';
@@ -307,6 +307,113 @@ function getRouteBasePrice(origin: string, dest: string, seed: number): number {
   const [min, max] = range;
   // Deterministic price within the range
   return Math.round(min + ((seed * 13 + 7) % (max - min)));
+}
+
+// ─── Airline options per route type ──────────────────────────────────────────
+
+export interface AirlineOption {
+  name: string;
+  code: string;
+  price: number;
+  stops: number;
+  duration: string;
+  departure: string;
+  trend: 'BUY' | 'WAIT' | 'RISK';
+  isLowCost: boolean;
+  seatsLeft?: number;
+}
+
+type RouteTemplate = { name: string; code: string; mult: number; stops: number; dur: string; dep: string; lowCost: boolean };
+
+const AIRLINE_TEMPLATES: Record<string, RouteTemplate[]> = {
+  'Afrique_Europe': [
+    { name:'Royal Air Maroc', code:'AT', mult:1.00, stops:0, dur:'3h10', dep:'08:30', lowCost:false },
+    { name:'Air France',      code:'AF', mult:1.18, stops:0, dur:'3h05', dep:'10:15', lowCost:false },
+    { name:'Transavia',       code:'TO', mult:0.76, stops:0, dur:'3h15', dep:'06:20', lowCost:true  },
+    { name:'EasyJet',         code:'U2', mult:0.72, stops:0, dur:'3h20', dep:'07:05', lowCost:true  },
+    { name:'Ryanair',         code:'FR', mult:0.68, stops:1, dur:'5h40', dep:'14:00', lowCost:true  },
+  ],
+  'Europe_Afrique': [
+    { name:'Air France',      code:'AF', mult:1.15, stops:0, dur:'3h10', dep:'09:45', lowCost:false },
+    { name:'Royal Air Maroc', code:'AT', mult:1.00, stops:0, dur:'3h15', dep:'11:30', lowCost:false },
+    { name:'Transavia',       code:'TO', mult:0.75, stops:0, dur:'3h20', dep:'06:30', lowCost:true  },
+    { name:'EasyJet',         code:'U2', mult:0.70, stops:0, dur:'3h25', dep:'07:15', lowCost:true  },
+    { name:'Vueling',         code:'VY', mult:0.73, stops:1, dur:'5h20', dep:'12:00', lowCost:true  },
+  ],
+  'Europe_Europe': [
+    { name:'Ryanair',    code:'FR', mult:0.65, stops:0, dur:'2h10', dep:'06:30', lowCost:true  },
+    { name:'EasyJet',   code:'U2', mult:0.72, stops:0, dur:'2h15', dep:'07:45', lowCost:true  },
+    { name:'Vueling',   code:'VY', mult:0.78, stops:0, dur:'2h20', dep:'09:00', lowCost:true  },
+    { name:'Transavia', code:'TO', mult:0.80, stops:0, dur:'2h05', dep:'08:15', lowCost:true  },
+    { name:'Air France',code:'AF', mult:1.00, stops:0, dur:'2h10', dep:'10:30', lowCost:false },
+    { name:'Lufthansa', code:'LH', mult:1.08, stops:1, dur:'3h40', dep:'13:20', lowCost:false },
+  ],
+  'Europe_Amériques': [
+    { name:'Air France',      code:'AF', mult:1.00, stops:0, dur:'8h45', dep:'10:30', lowCost:false },
+    { name:'Delta',           code:'DL', mult:1.06, stops:0, dur:'9h00', dep:'08:00', lowCost:false },
+    { name:'British Airways', code:'BA', mult:0.95, stops:1, dur:'11h',  dep:'14:20', lowCost:false },
+    { name:'Iberia',          code:'IB', mult:0.88, stops:1, dur:'11h20',dep:'12:00', lowCost:false },
+    { name:'Norwegian',       code:'DY', mult:0.75, stops:0, dur:'9h30', dep:'15:00', lowCost:true  },
+  ],
+  'Amériques_Europe': [
+    { name:'Air France',      code:'AF', mult:1.00, stops:0, dur:'7h30', dep:'14:00', lowCost:false },
+    { name:'Delta',           code:'DL', mult:1.05, stops:0, dur:'7h45', dep:'11:30', lowCost:false },
+    { name:'British Airways', code:'BA', mult:0.96, stops:1, dur:'10h',  dep:'09:00', lowCost:false },
+    { name:'Iberia',          code:'IB', mult:0.89, stops:1, dur:'10h30',dep:'12:30', lowCost:false },
+    { name:'Norwegian',       code:'DY', mult:0.76, stops:0, dur:'8h00', dep:'17:00', lowCost:true  },
+  ],
+  'Europe_Asie': [
+    { name:'Air France',         code:'AF', mult:1.00, stops:0, dur:'11h30', dep:'10:15', lowCost:false },
+    { name:'Emirates',           code:'EK', mult:1.08, stops:1, dur:'13h40', dep:'08:30', lowCost:false },
+    { name:'Qatar Airways',      code:'QR', mult:1.05, stops:1, dur:'13h',   dep:'09:00', lowCost:false },
+    { name:'Turkish Airlines',   code:'TK', mult:0.86, stops:1, dur:'14h20', dep:'06:00', lowCost:false },
+    { name:'Singapore Airlines', code:'SQ', mult:1.12, stops:0, dur:'12h45', dep:'12:00', lowCost:false },
+  ],
+  'Asie_Europe': [
+    { name:'Air France',         code:'AF', mult:1.00, stops:0, dur:'11h',  dep:'23:30', lowCost:false },
+    { name:'Emirates',           code:'EK', mult:1.08, stops:1, dur:'13h',  dep:'10:00', lowCost:false },
+    { name:'Qatar Airways',      code:'QR', mult:1.05, stops:1, dur:'12h30',dep:'01:00', lowCost:false },
+    { name:'Turkish Airlines',   code:'TK', mult:0.86, stops:1, dur:'13h',  dep:'06:00', lowCost:false },
+    { name:'Singapore Airlines', code:'SQ', mult:1.12, stops:0, dur:'12h',  dep:'23:00', lowCost:false },
+  ],
+  'Europe_M-Orient': [
+    { name:'Emirates',         code:'EK', mult:1.00, stops:0, dur:'6h20', dep:'08:30', lowCost:false },
+    { name:'Qatar Airways',    code:'QR', mult:0.98, stops:0, dur:'6h10', dep:'09:00', lowCost:false },
+    { name:'Air France',       code:'AF', mult:1.05, stops:0, dur:'6h30', dep:'11:00', lowCost:false },
+    { name:'Flydubai',         code:'FZ', mult:0.78, stops:1, dur:'9h45', dep:'04:00', lowCost:true  },
+    { name:'Turkish Airlines', code:'TK', mult:0.88, stops:1, dur:'8h30', dep:'06:00', lowCost:false },
+  ],
+  'M-Orient_Europe': [
+    { name:'Emirates',         code:'EK', mult:1.00, stops:0, dur:'7h',   dep:'08:00', lowCost:false },
+    { name:'Qatar Airways',    code:'QR', mult:0.98, stops:0, dur:'6h50', dep:'09:30', lowCost:false },
+    { name:'Air France',       code:'AF', mult:1.05, stops:0, dur:'7h10', dep:'07:00', lowCost:false },
+    { name:'Flydubai',         code:'FZ', mult:0.79, stops:1, dur:'10h',  dep:'23:00', lowCost:true  },
+    { name:'Turkish Airlines', code:'TK', mult:0.88, stops:1, dur:'9h',   dep:'05:00', lowCost:false },
+  ],
+};
+
+export function generateAirlinesForRoute(origin: string, destination: string): AirlineOption[] {
+  const oAp = findAirport(origin);
+  const dAp = findAirport(destination);
+  const key = `${oAp?.region ?? 'Europe'}_${dAp?.region ?? 'Europe'}`;
+  const templates = AIRLINE_TEMPLATES[key] ?? AIRLINE_TEMPLATES['Europe_Europe'];
+  const seed = (origin + destination).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const base = getRouteBasePrice(origin, destination, seed);
+  const SEATS = [undefined, undefined, undefined, 2, 3, 5, 7, undefined, undefined, undefined] as (number | undefined)[];
+  return templates.map((t, i) => {
+    const price = Math.round(base * t.mult * (1 + ((seed * 3 + i * 7) % 8 - 4) / 100));
+    return {
+      name: t.name,
+      code: t.code,
+      price,
+      stops: t.stops,
+      duration: t.dur,
+      departure: t.dep,
+      trend: (t.mult < 0.82 ? 'BUY' : t.mult > 1.05 ? 'WAIT' : 'BUY') as 'BUY' | 'WAIT' | 'RISK',
+      isLowCost: t.lowCost,
+      seatsLeft: SEATS[(seed + i * 3) % SEATS.length],
+    };
+  });
 }
 
 export function generatePrediction(params: {

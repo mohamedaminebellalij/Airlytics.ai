@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeftRight, Clock, Luggage, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { AirportInput } from '@/components/ui/AirportInput';
-import type { Airport } from '@/lib/airports';
+import { findAirport, type Airport } from '@/lib/airports';
 
 export interface SearchParams {
   origin: string;
   destination: string;
   date: string;
   returnDate?: string;
-  airline: string;
   tripType: 'one-way' | 'round-trip';
   departureTime: string;
   cabinClass: 'economy' | 'business' | 'first' | 'premium';
@@ -23,11 +22,12 @@ export interface SearchParams {
 interface SearchFormProps {
   initialOrigin?: string;
   initialDestination?: string;
+  destinationOverride?: string;
+  onOriginChange?: (iata: string) => void;
   onSearch?: (params: SearchParams) => void;
   loading?: boolean;
 }
 
-const airlines = ['Toutes compagnies', 'Air France', 'Delta', 'British Airways', 'Emirates', 'Lufthansa', 'Ryanair', 'EasyJet', 'Transavia', 'Vueling'];
 const cabinClasses = [
   { value: 'economy',  label: 'Économique' },
   { value: 'premium',  label: 'Premium Éco' },
@@ -101,7 +101,14 @@ function DateInput({ label, value, onChange, min }: { label: string; value: stri
   );
 }
 
-export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', onSearch, loading }: SearchFormProps) {
+export function SearchForm({
+  initialOrigin = 'CDG',
+  initialDestination = 'JFK',
+  destinationOverride,
+  onOriginChange,
+  onSearch,
+  loading,
+}: SearchFormProps) {
   const [origin, setOrigin] = useState(initialOrigin);
   const [destination, setDestination] = useState(initialDestination);
   const [originCity, setOriginCity] = useState<string | undefined>();
@@ -117,20 +124,42 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
     d.setDate(d.getDate() + 30);
     return d.toISOString().split('T')[0];
   });
-  const [airline, setAirline] = useState('Toutes compagnies');
   const [departureTime, setDepartureTime] = useState('');
   const [cabinClass, setCabinClass] = useState<'economy' | 'business' | 'first' | 'premium'>('economy');
 
+  // Apply external destination override (from destination suggestion clicks)
+  useEffect(() => {
+    if (destinationOverride && destinationOverride !== destination) {
+      setDestination(destinationOverride);
+      const ap = findAirport(destinationOverride);
+      setDestinationCity(ap?.city);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destinationOverride]);
+
   const swap = () => {
-    setOrigin(destination);
-    setDestination(origin);
+    const newOrigin = destination;
+    const newDest = origin;
+    setOrigin(newOrigin);
+    setDestination(newDest);
     setOriginCity(destinationCity);
     setDestinationCity(originCity);
+    onOriginChange?.(newOrigin);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch?.({ origin, destination, date, returnDate: tripType === 'round-trip' ? returnDate : undefined, airline, tripType, departureTime, cabinClass, originCity, destinationCity });
+    onSearch?.({
+      origin,
+      destination,
+      date,
+      returnDate: tripType === 'round-trip' ? returnDate : undefined,
+      tripType,
+      departureTime,
+      cabinClass,
+      originCity,
+      destinationCity,
+    });
   };
 
   return (
@@ -159,17 +188,19 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
 
       {/* Row 1: Origin ↔ Dest + Dates */}
       <div className="flex items-start gap-3 flex-wrap">
-        {/* Origin */}
         <div className="flex-1 min-w-[120px]">
           <label style={labelStyle}>Départ</label>
           <AirportInput
             value={origin}
-            onChange={(iata, a?: Airport) => { setOrigin(iata); setOriginCity(a?.city); }}
+            onChange={(iata, a?: Airport) => {
+              setOrigin(iata);
+              setOriginCity(a?.city);
+              onOriginChange?.(iata);
+            }}
             placeholder="CDG"
           />
         </div>
 
-        {/* Swap */}
         <div className="pt-6">
           <motion.button
             type="button"
@@ -183,7 +214,6 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
           </motion.button>
         </div>
 
-        {/* Destination */}
         <div className="flex-1 min-w-[120px]">
           <label style={labelStyle}>Arrivée</label>
           <AirportInput
@@ -200,15 +230,8 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
         )}
       </div>
 
-      {/* Row 2: Airline + Time + Cabin class + Submit */}
+      {/* Row 2: Time + Cabin + Submit */}
       <div className="flex items-end gap-3 flex-wrap">
-        <div className="flex-1 min-w-[150px]">
-          <label style={labelStyle}>Compagnie</label>
-          <select value={airline} onChange={e => setAirline(e.target.value)} style={selectStyle}>
-            {airlines.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
-
         <div className="flex-1 min-w-[150px]">
           <label style={labelStyle}>
             <Clock size={9} style={{ display: 'inline', marginRight: 3 }} />
@@ -230,7 +253,7 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
         </div>
 
         <Button type="submit" loading={loading} size="md" className="shrink-0">
-          Analyser
+          Rechercher
         </Button>
       </div>
     </form>
