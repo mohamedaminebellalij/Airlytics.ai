@@ -1,12 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  output: 'export',
   transpilePackages: ['@airlytics/types'],
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com' },
-      { protocol: 'https', hostname: 'flagcdn.com' },
-    ],
+    unoptimized: true,
   },
 };
 
