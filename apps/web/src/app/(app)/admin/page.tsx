@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck, Activity, FlaskConical, Users, TrendingUp,
@@ -9,6 +11,7 @@ import { mockModelMetrics, mockPredictionLogs, mockABTests } from '@/lib/mock-da
 import { VerdictBadge, StatusBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 import type { ModelMetrics } from '@airlytics/types';
 import {
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar,
@@ -96,6 +99,26 @@ function ModelCard({ model }: { model: ModelMetrics }) {
 }
 
 export default function AdminPage() {
+  const { user, ready } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (ready && (!user || !user.isAdmin)) {
+      router.replace('/login?redirect=/admin&reason=admin');
+    }
+  }, [ready, user, router]);
+
+  if (!ready || !user?.isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <ShieldCheck size={40} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Vérification des droits d&apos;accès…
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto p-6 space-y-6">
       {/* Header */}

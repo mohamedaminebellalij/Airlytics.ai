@@ -1,27 +1,41 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Brain, ArrowLeftRight, MessageSquare,
-  Globe, Zap, Megaphone, ShieldCheck, ChevronRight, LogIn,
+  Globe, Zap, Megaphone, ShieldCheck, ChevronRight, LogIn, LogOut,
 } from 'lucide-react';
 import { AirlyticsLogo } from '@/components/ui/AirlyticsLogo';
+import { useAuth } from '@/lib/auth';
 
-const navItems = [
-  { href: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/predict',    icon: Brain,            label: 'Prédiction',  badge: 'CORE', badgeGreen: false },
-  { href: '/compare',    icon: ArrowLeftRight,   label: 'Comparer' },
-  { href: '/assistant',  icon: MessageSquare,    label: 'Assistant IA' },
-  { href: '/explore',    icon: Globe,            label: 'Explorer' },
-  { href: '/deals',      icon: Zap,              label: 'Smart Deals', badge: '12', badgeGreen: true },
-  { href: '/ads',        icon: Megaphone,        label: 'Régie Pub' },
-  { href: '/admin',      icon: ShieldCheck,      label: 'Admin' },
+const NAV_ITEMS = [
+  { href: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',    adminOnly: false },
+  { href: '/predict',    icon: Brain,            label: 'Prédiction',  adminOnly: false, badge: 'CORE', badgeGreen: false },
+  { href: '/compare',    icon: ArrowLeftRight,   label: 'Comparer',    adminOnly: false },
+  { href: '/assistant',  icon: MessageSquare,    label: 'Assistant IA', adminOnly: false },
+  { href: '/explore',    icon: Globe,            label: 'Explorer',    adminOnly: false },
+  { href: '/deals',      icon: Zap,              label: 'Smart Deals', adminOnly: false, badge: '12', badgeGreen: true },
+  { href: '/ads',        icon: Megaphone,        label: 'Régie Pub',   adminOnly: true },
+  { href: '/admin',      icon: ShieldCheck,      label: 'Admin',       adminOnly: true },
 ] as const;
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, ready, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  const initials = user
+    ? user.name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
+  const visibleItems = NAV_ITEMS.filter(item => !item.adminOnly || user?.isAdmin);
 
   return (
     <aside
@@ -53,7 +67,7 @@ export function Sidebar() {
           Navigation
         </p>
 
-        {navItems.map(item => {
+        {visibleItems.map(item => {
           const active =
             pathname === item.href ||
             (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -85,32 +99,49 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User / Plan footer */}
+      {/* User footer */}
       <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3 p-2.5 rounded-md mb-2" style={{ background: 'var(--bg-hover)' }}>
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ background: 'linear-gradient(135deg, #5b86ff, #2bd9a0)', color: 'white' }}
-          >
-            MA
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-              Mohamed Amine
-            </p>
-            <p className="text-xs font-mono" style={{ color: 'var(--accent-blue)' }}>PRO</p>
-          </div>
-        </div>
-        <Link href="/login">
-          <motion.div
-            whileHover={{ x: 2 }}
-            className="sidebar-item text-xs"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <LogIn size={14} />
-            <span>Connexion / Compte</span>
-          </motion.div>
-        </Link>
+        {ready && user ? (
+          <>
+            <div className="flex items-center gap-3 p-2.5 rounded-md mb-2" style={{ background: 'var(--bg-hover)' }}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                style={{ background: 'linear-gradient(135deg, #5b86ff, #2bd9a0)', color: 'white' }}
+              >
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                  {user.name}
+                </p>
+                <p className="text-xs font-mono" style={{ color: user.isAdmin ? 'var(--risk)' : 'var(--accent-blue)' }}>
+                  {user.isAdmin ? 'ADMIN' : user.plan.toUpperCase()}
+                </p>
+              </div>
+            </div>
+            <button onClick={handleLogout} className="w-full">
+              <motion.div
+                whileHover={{ x: 2 }}
+                className="sidebar-item text-xs"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <LogOut size={14} />
+                <span>Déconnexion</span>
+              </motion.div>
+            </button>
+          </>
+        ) : (
+          <Link href="/login">
+            <motion.div
+              whileHover={{ x: 2 }}
+              className="sidebar-item text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <LogIn size={14} />
+              <span>Connexion / Compte</span>
+            </motion.div>
+          </Link>
+        )}
       </div>
     </aside>
   );

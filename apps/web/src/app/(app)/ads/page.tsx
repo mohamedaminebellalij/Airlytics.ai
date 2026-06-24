@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Megaphone, Eye, MousePointer, DollarSign, BarChart3 } from 'lucide-react';
+import { Megaphone, Eye, MousePointer, DollarSign, BarChart3, ShieldCheck } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 import { mockCampaigns, mockInventory } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/Card';
@@ -27,7 +29,27 @@ const formatColors: Record<AdFormat, string> = {
 };
 
 export default function AdsPage() {
+  const { user, ready } = useAuth();
+  const router = useRouter();
   const [tab, setTab] = useState<'campaigns' | 'inventory'>('campaigns');
+
+  useEffect(() => {
+    if (ready && (!user || !user.isAdmin)) {
+      router.replace('/login?redirect=/ads&reason=admin');
+    }
+  }, [ready, user, router]);
+
+  if (!ready || !user?.isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <ShieldCheck size={40} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Vérification des droits d&apos;accès…
+        </p>
+      </div>
+    );
+  }
+
 
   const totalRevenue = mockInventory.reduce((s, i) => s + i.revenue, 0);
   const totalImpressions = mockCampaigns.reduce((s, c) => s + c.impressions, 0);

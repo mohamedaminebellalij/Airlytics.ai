@@ -1,29 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import { AirlyticsLogo } from '@/components/ui/AirlyticsLogo';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login, user, ready } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const redirect = searchParams.get('redirect') ?? '/dashboard';
+  const reason = searchParams.get('reason');
+
+  useEffect(() => {
+    if (ready && user) {
+      router.replace(redirect);
+    }
+  }, [ready, user, router, redirect]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) { setError('Remplissez tous les champs'); return; }
+    if (!email || !password) { setError('Remplissez tous les champs.'); return; }
     setError('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
+    const ok = await login(email, password);
     setLoading(false);
-    router.push('/dashboard');
+    if (!ok) { setError('Email ou mot de passe invalide.'); return; }
+    router.push(redirect);
   };
 
   const inputStyle: React.CSSProperties = {
@@ -61,6 +74,14 @@ export default function LoginPage() {
           <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
             Accédez à vos prédictions et alertes
           </p>
+
+          {reason === 'admin' && (
+            <div className="mb-4 px-4 py-3 rounded-md text-sm flex items-center gap-2"
+                 style={{ background: 'var(--accent-blue-dim)', color: 'var(--accent-blue)', border: '1px solid var(--border-accent)' }}>
+              <ShieldCheck size={14} />
+              Accès réservé aux administrateurs. Connectez-vous avec votre compte admin.
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 px-4 py-3 rounded-md text-sm"
@@ -155,5 +176,13 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

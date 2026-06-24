@@ -4,13 +4,14 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
-import { SearchForm } from '@/components/predict/SearchForm';
+import { SearchForm, type SearchParams } from '@/components/predict/SearchForm';
 import { VerdictCard } from '@/components/predict/VerdictCard';
 import { PriceChart } from '@/components/predict/PriceChart';
 import { FeatureImportance } from '@/components/predict/FeatureImportance';
 import { BestBuyWindow } from '@/components/predict/BestBuyWindow';
 import { TrackPanel } from '@/components/predict/TrackPanel';
 import { mockPrediction, generatePrediction } from '@/lib/mock-data';
+import { findAirport } from '@/lib/airports';
 import { formatDate } from '@/lib/utils';
 import type { PredictionResult } from '@airlytics/types';
 
@@ -24,7 +25,7 @@ const item = {
   show:   { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
 };
 
-function addDays(dateStr: string, days: number): string {
+function addDaysToDate(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
   return d.toISOString().split('T')[0];
@@ -44,47 +45,64 @@ function PredictContent() {
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState<PredictionResult>(mockPrediction);
   const [analyzed, setAnalyzed] = useState(true);
-  const [currentDate, setCurrentDate] = useState(defaultDate);
-  const [currentOrigin, setCurrentOrigin] = useState(initialOrigin);
-  const [currentDestination, setCurrentDestination] = useState(initialDestination);
-  const [currentAirline, setCurrentAirline] = useState('Air France');
+  const [lastParams, setLastParams] = useState<SearchParams>({
+    origin: initialOrigin,
+    destination: initialDestination,
+    date: defaultDate,
+    airline: 'Air France',
+    tripType: 'one-way',
+    departureTime: '',
+    cabinClass: 'economy',
+  });
 
-  const handleSearch = async (params: { origin: string; destination: string; date: string; airline: string }) => {
+  const originInfo = findAirport(lastParams.origin);
+  const destInfo = findAirport(lastParams.destination);
+  const originLabel = originInfo?.city ?? lastParams.origin;
+  const destLabel = destInfo?.city ?? lastParams.destination;
+
+  const handleSearch = async (params: SearchParams) => {
     setLoading(true);
     setAnalyzed(false);
-    setCurrentDate(params.date);
-    setCurrentOrigin(params.origin);
-    setCurrentDestination(params.destination);
-    setCurrentAirline(params.airline);
+    setLastParams(params);
     await new Promise(r => setTimeout(r, 1400));
-    setPrediction(generatePrediction(params));
+    setPrediction(generatePrediction({ origin: params.origin, destination: params.destination, date: params.date, airline: params.airline }));
     setLoading(false);
     setAnalyzed(true);
   };
 
   const navigateDate = async (delta: number) => {
-    const newDate = addDays(currentDate, delta);
-    await handleSearch({
-      origin: currentOrigin,
-      destination: currentDestination,
-      date: newDate,
-      airline: currentAirline,
-    });
+    const newDate = addDaysToDate(lastParams.date, delta);
+    const today = new Date().toISOString().split('T')[0];
+    if (newDate < today) return;
+    await handleSearch({ ...lastParams, date: newDate });
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const isPastDate = currentDate <= today;
+  const isPastDate = lastParams.date <= today;
 
   return (
     <div className="max-w-[1200px] mx-auto p-6 space-y-5">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
             Prédiction de prix
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            IA de prédiction — LightGBM + Prophet · Mise à jour toutes les 15 min
-          </p>
+          {analyzed && (
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+              <span className="font-semibold" style={{ color: 'var(--accent-blue)' }}>{originLabel}</span>
+              {' → '}
+              <span className="font-semibold" style={{ color: 'var(--accent-blue)' }}>{destLabel}</span>
+              {' · '}
+              {lastParams.tripType === 'round-trip' ? 'Aller-retour' : 'Aller simple'}
+              {' · '}
+              {lastParams.cabinClass === 'economy' ? 'Économique' : lastParams.cabinClass === 'business' ? 'Business' : lastParams.cabinClass === 'first' ? '1re classe' : 'Premium Éco'}
+            </p>
+          )}
+          {!analyzed && (
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              IA de prédiction — LightGBM + Prophet · Mise à jour toutes les 15 min
+            </p>
+          )}
         </div>
 
         {/* Date navigation */}
@@ -92,7 +110,7 @@ function PredictContent() {
           <motion.div
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 p-2 rounded-xl"
+            className="flex items-center gap-1 p-1.5 rounded-xl shrink-0"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
           >
             <button
@@ -106,9 +124,9 @@ function PredictContent() {
               <ChevronLeft size={16} />
             </button>
             <div className="flex items-center gap-2 px-2">
-              <CalendarDays size={13} style={{ color: 'var(--accent-blue)' }} />
+              <CalendarDays size={12} style={{ color: 'var(--accent-blue)' }} />
               <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {formatDate(currentDate, { day: 'numeric', month: 'short', year: 'numeric' })}
+                {formatDate(lastParams.date, { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
             <button

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Check } from 'lucide-react';
 import { AirlyticsLogo } from '@/components/ui/AirlyticsLogo';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/lib/auth';
 
 const PLANS = [
   { id: 'free', label: 'Gratuit', price: '0€/mois', features: ['5 prédictions/jour', '1 vol suivi', 'Alertes email'] },
@@ -15,6 +16,7 @@ const PLANS = [
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,7 +55,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1400));
+    await login(email, password);
     setLoading(false);
     router.push('/dashboard');
   };
