@@ -5,8 +5,9 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Brain, ArrowLeftRight, MessageSquare,
-  Globe, Zap, Megaphone, ShieldCheck, TrendingUp, ChevronRight,
+  Globe, Zap, Megaphone, ShieldCheck, ChevronRight, LogIn,
 } from 'lucide-react';
+import { AirlyticsLogo } from '@/components/ui/AirlyticsLogo';
 
 const navItems = [
   { href: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard' },
@@ -37,12 +38,7 @@ export function Sidebar() {
         className="flex items-center px-5 gap-3 shrink-0"
         style={{ height: 'var(--topbar-h)', borderBottom: '1px solid var(--border)' }}
       >
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, #5b86ff, #2bd9a0)' }}
-        >
-          <TrendingUp size={14} color="white" />
-        </div>
+        <AirlyticsLogo size={28} />
         <span className="font-semibold text-[15px]" style={{ color: 'var(--text-primary)' }}>
           Airlytics<span style={{ color: 'var(--accent-blue)' }}>.ai</span>
         </span>
@@ -91,7 +87,7 @@ export function Sidebar() {
 
       {/* User / Plan footer */}
       <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-3 p-2.5 rounded-md" style={{ background: 'var(--bg-hover)' }}>
+        <div className="flex items-center gap-3 p-2.5 rounded-md mb-2" style={{ background: 'var(--bg-hover)' }}>
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
             style={{ background: 'linear-gradient(135deg, #5b86ff, #2bd9a0)', color: 'white' }}
@@ -105,6 +101,16 @@ export function Sidebar() {
             <p className="text-xs font-mono" style={{ color: 'var(--accent-blue)' }}>PRO</p>
           </div>
         </div>
+        <Link href="/login">
+          <motion.div
+            whileHover={{ x: 2 }}
+            className="sidebar-item text-xs"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <LogIn size={14} />
+            <span>Connexion / Compte</span>
+          </motion.div>
+        </Link>
       </div>
     </aside>
   );

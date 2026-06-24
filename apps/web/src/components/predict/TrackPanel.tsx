@@ -16,8 +16,15 @@ export function TrackPanel({ prediction }: TrackPanelProps) {
   const [tracked, setTracked] = useState(false);
   const [threshold, setThreshold] = useState(Math.round(prediction.currentPrice * 0.9));
   const [channels, setChannels] = useState({ email: true, push: false });
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
 
   const handleTrack = async () => {
+    if (channels.email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setEmailError('Entrez un email valide');
+      return;
+    }
+    setEmailError('');
     setTracking(true);
     await new Promise(r => setTimeout(r, 1200));
     setTracking(false);
@@ -59,7 +66,10 @@ export function TrackPanel({ prediction }: TrackPanelProps) {
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--buy)' }}>Vol suivi !</p>
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Alerte à {formatPrice(threshold)} — {channels.email ? 'Email' : ''}{channels.email && channels.push ? ' + ' : ''}{channels.push ? 'Push' : ''}
+                Alerte à {formatPrice(threshold)} —{' '}
+                {channels.email ? `📧 ${email}` : ''}
+                {channels.email && channels.push ? ' + ' : ''}
+                {channels.push ? '📱 Push' : ''}
               </p>
             </div>
           </motion.div>
@@ -118,6 +128,34 @@ export function TrackPanel({ prediction }: TrackPanelProps) {
                 ))}
               </div>
             </div>
+
+            {/* Email input */}
+            {channels.email && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+              >
+                <label className="text-xs font-semibold uppercase tracking-wide block mb-1.5"
+                       style={{ color: 'var(--text-muted)' }}>
+                  Votre email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setEmailError(''); }}
+                  placeholder="vous@exemple.com"
+                  className="w-full text-sm px-3 py-2 rounded-md outline-none"
+                  style={{
+                    background: 'var(--bg-base)',
+                    border: `1px solid ${emailError ? 'var(--risk)' : 'var(--border)'}`,
+                    color: 'var(--text-primary)',
+                  }}
+                />
+                {emailError && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--risk)' }}>{emailError}</p>
+                )}
+              </motion.div>
+            )}
 
             <Button
               onClick={handleTrack}

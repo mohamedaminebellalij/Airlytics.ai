@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, TrendingDown, TrendingUp, Compass } from 'lucide-react';
+import { Send, Bot, User, TrendingDown, TrendingUp, Compass, Globe, Search } from 'lucide-react';
 import { mockMessages } from '@/lib/mock-data';
 import type { ChatMessage, VerdictChip } from '@airlytics/types';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,70 @@ const chipConfig: Record<VerdictChip, { label: string; icon: React.ReactNode; co
   EXPLORER:{ label: 'EXPLORER', icon: <Compass size={10} />,       color: '--accent-blue' },
   ACT_NOW: { label: 'ACHETER',  icon: <TrendingDown size={10} />, color: '--buy' },
 };
+
+function generateResponse(userText: string): { content: string; chips?: VerdictChip[] } {
+  const q = userText.toLowerCase();
+
+  const routeMatch = q.match(/([a-z]{3})[→\->\/\s]+([a-z]{3})/i);
+  const origin = routeMatch?.[1]?.toUpperCase();
+  const dest = routeMatch?.[2]?.toUpperCase();
+
+  if (q.includes('budget') || q.includes('pas cher') || q.includes('moins cher') || q.match(/\d+\s*€/)) {
+    const budget = q.match(/(\d+)\s*€/)?.[1] ?? '300';
+    return {
+      content: `🔍 **Recherche en cours pour un budget de ${budget}€...**\n\nVoici les meilleures destinations IA détectées sous ${budget}€ depuis Paris :\n\n• **Madrid** (MAD) — dès **89€** · Signal : ↓ BUY\n• **Lisbonne** (LIS) — dès **112€** · Signal : ↓ BUY\n• **Rome** (FCO) — dès **134€** · Signal : → WAIT\n• **Prague** (PRG) — dès **97€** · Signal : ↓ BUY\n\nJe recommande **Madrid** — historiquement -18% les mardis.`,
+      chips: ['ACT_NOW', 'EXPLORER'],
+    };
+  }
+
+  if ((q.includes('comparer') || q.includes('vs')) && (q.includes('air france') || q.includes('delta') || q.includes('airlines'))) {
+    return {
+      content: `📊 **Comparaison Air France vs Delta — CDG→NYC**\n\nD'après les données en temps réel :\n\n| | Air France AF006 | Delta DL264 |\n|---|---|---|\n| Prix actuel | **462€** | **498€** |\n| Prédiction IA | ↓ BUY (81%) | → WAIT (62%) |\n| Évolution 7j | -12.4% | +5.2% |\n| Direct | ✓ 8h45 | ✓ 8h55 |\n\n✅ **Recommandation : Air France** — meilleur rapport signal/prix.`,
+      chips: ['ACT_NOW'],
+    };
+  }
+
+  if (q.includes('bangkok') || q.includes('bkk') || q.includes('asie') || q.includes('tokyo') || q.includes('nrt')) {
+    const dest2 = q.includes('bangkok') || q.includes('bkk') ? 'Bangkok (BKK)' : 'Tokyo (NRT)';
+    return {
+      content: `🌏 **Analyse ${dest2} depuis Paris**\n\n🔎 Données web actuelles :\n• Basse saison : novembre–février (prix -35%)\n• Haute saison : juillet–août, décembre\n• Actuellement : prix **stables** → signal WAIT\n\n📈 Prévision IA sur 30 jours :\n• Probabilité de baisse : **58%**\n• Fenêtre optimale : **dans 12–18 jours**\n• Économie estimée : **~€85**\n\n⏳ Je recommande d'**attendre** encore 10 jours avant de réserver.`,
+      chips: ['WAIT', 'EXPLORER'],
+    };
+  }
+
+  if (origin && dest) {
+    const seed = (origin + dest).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    const price = 200 + (seed % 600);
+    const proba = 55 + (seed % 35);
+    const trend = seed % 3 === 0 ? 'BUY' : seed % 3 === 1 ? 'WAIT' : 'RISK';
+    const delta = trend === 'BUY' ? -(5 + seed % 15) : trend === 'WAIT' ? 2 + seed % 6 : 8 + seed % 12;
+    const chips: VerdictChip[] = trend === 'BUY' ? ['ACT_NOW'] : trend === 'WAIT' ? ['WAIT'] : ['WAIT', 'EXPLORER'];
+
+    return {
+      content: `✈️ **Analyse ${origin} → ${dest}**\n\n🔍 Recherche web + modèle IA en cours...\n\n• Prix actuel : **${price}€**\n• Signal : **${trend}** (confiance ${proba}%)\n• Variation prévue : **${delta > 0 ? '+' : ''}${delta}%** sur 7 jours\n• Volume de recherches : ${seed % 2 === 0 ? 'Élevé 📈' : 'Normal ➡'}\n\n${trend === 'BUY' ? `✅ **Recommandation : ACHETER maintenant** — les prix devraient remonter d'ici 5 jours.` : trend === 'WAIT' ? `⏳ **Recommandation : ATTENDRE** — une baisse est probable dans 7–10 jours.` : `⚠️ **Attention : prix en hausse** — si vous devez voyager, réservez rapidement.`}`,
+      chips,
+    };
+  }
+
+  if (q.includes('alerte') || q.includes('notification') || q.includes('suivi')) {
+    return {
+      content: `🔔 **Vos alertes actives**\n\n• **CDG → JFK** — Alerte à 420€ · Prix actuel 462€ (93€ de l'objectif)\n• **CDG → BKK** — Alerte à 580€ · Prix actuel 612€ (32€ de l'objectif)\n• **ORY → MAD** — Alerte à 80€ · Prix actuel 89€ — **bientôt déclenché !** ⚡\n\nJe surveille en continu et vous notifie par email dès qu'un seuil est atteint.`,
+      chips: ['ACT_NOW'],
+    };
+  }
+
+  if (q.includes('week-end') || q.includes('weekend') || q.includes('partir')) {
+    return {
+      content: `🗺️ **Destinations idéales ce week-end** — Recherche en cours...\n\nOffres flash détectées depuis Paris (aller-retour) :\n\n🇪🇸 **Madrid** — **89€** · Direct · ↓ -15% vs semaine dernière\n🇵🇹 **Lisbonne** — **112€** · Direct · ↓ -8%\n🇮🇹 **Rome** — **134€** · 1 escale · → stable\n🇬🇧 **Londres** — **67€** · Direct · ↓ -22% ⭐ DEAL DU JOUR\n\n🔥 **Londres est le meilleur deal** : prix d'erreur tarifaire possible !`,
+      chips: ['ACT_NOW', 'EXPLORER'],
+    };
+  }
+
+  return {
+    content: `🤖 **Analyse en cours...**\n\nJ'ai cherché des informations concernant **"${userText}"**.\n\nD'après mes données en temps réel et l'analyse de l'internet :\n\n• Les prix moyens actuels sont **dans la norme saisonnière**\n• Mon modèle détecte un signal **modéré** sur cette requête\n• Confiance du modèle : **76%**\n\nPour une analyse plus précise, précisez votre route (ex: "CDG JFK") ou votre budget.`,
+    chips: ['WAIT', 'EXPLORER'],
+  };
+}
 
 function VerdictChips({ chips }: { chips: VerdictChip[] }) {
   return (
@@ -45,7 +109,7 @@ function VerdictChips({ chips }: { chips: VerdictChip[] }) {
   );
 }
 
-function Message({ msg }: { msg: ChatMessage }) {
+function Message({ msg, isSearching }: { msg: ChatMessage; isSearching?: boolean }) {
   const isUser = msg.role === 'user';
   return (
     <motion.div
@@ -53,7 +117,6 @@ function Message({ msg }: { msg: ChatMessage }) {
       animate={{ opacity: 1, y: 0 }}
       className={cn('flex gap-3', isUser && 'flex-row-reverse')}
     >
-      {/* Avatar */}
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
         style={{
@@ -68,8 +131,13 @@ function Message({ msg }: { msg: ChatMessage }) {
         }
       </div>
 
-      {/* Bubble */}
       <div className={cn('max-w-[75%]', isUser ? 'items-end flex flex-col' : '')}>
+        {isSearching && (
+          <p className="text-[10px] flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <Globe size={10} className="animate-spin" />
+            Recherche web en cours…
+          </p>
+        )}
         <div
           className="rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"
           style={{
@@ -89,6 +157,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -107,13 +176,25 @@ export default function AssistantPage() {
     setInput('');
     setThinking(true);
 
-    await new Promise(r => setTimeout(r, 1800));
+    const needsWebSearch = text.toLowerCase().includes('recherche') ||
+      text.toLowerCase().includes('internet') ||
+      text.toLowerCase().includes('actuel') ||
+      text.toLowerCase().includes('maintenant');
 
+    if (needsWebSearch) {
+      setIsSearching(true);
+      await new Promise(r => setTimeout(r, 900));
+      setIsSearching(false);
+    }
+
+    await new Promise(r => setTimeout(r, needsWebSearch ? 900 : 1400));
+
+    const response = generateResponse(text);
     const assistantMsg: ChatMessage = {
       id: `a-${Date.now()}`,
       role: 'assistant',
-      content: `J'analyse votre demande concernant **"${text}"**.\n\nD'après mes données en temps réel, voici mon analyse :\n\n- Probabilité de baisse : **74%** dans les 5 prochains jours\n- Signal actuel : **BUY** sur la route principale\n- Confiance du modèle : **82%**\n\nJe vous recommande d'attendre encore 2–3 jours pour une économie potentielle de **~15%**.`,
-      chips: ['WAIT', 'ACT_NOW'],
+      content: response.content,
+      chips: response.chips,
       createdAt: new Date().toISOString(),
     };
     setMessages(prev => [...prev, assistantMsg]);
@@ -135,7 +216,7 @@ export default function AssistantPage() {
             </h1>
             <p className="text-xs flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
               <span className="live-pulse" style={{ fontSize: 10 }}>En ligne</span>
-              · Données temps réel · GPT-4 + modèles de prédiction
+              · Recherche web <Search size={10} className="inline" /> · LightGBM + Prophet
             </p>
           </div>
         </div>
@@ -151,16 +232,25 @@ export default function AssistantPage() {
                  style={{ background: 'var(--accent-blue-dim)' }}>
               <Bot size={14} style={{ color: 'var(--accent-blue)' }} />
             </div>
-            <div className="px-4 py-3 rounded-xl card flex items-center gap-1.5">
-              {[0, 0.15, 0.3].map(delay => (
-                <motion.span
-                  key={delay}
-                  animate={{ y: [-3, 3, -3] }}
-                  transition={{ repeat: Infinity, duration: 0.8, delay }}
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: 'var(--accent-blue)' }}
-                />
-              ))}
+            <div className="px-4 py-3 rounded-xl card">
+              {isSearching ? (
+                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <Globe size={12} className="animate-spin" style={{ color: 'var(--accent-blue)' }} />
+                  Recherche sur internet…
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  {[0, 0.15, 0.3].map(delay => (
+                    <motion.span
+                      key={delay}
+                      animate={{ y: [-3, 3, -3] }}
+                      transition={{ repeat: Infinity, duration: 0.8, delay }}
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: 'var(--accent-blue)' }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
