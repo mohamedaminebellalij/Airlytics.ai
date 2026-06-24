@@ -4,6 +4,7 @@ import type {
   PredictionLog, ABTest, ChatMessage,
 } from '@airlytics/types';
 import { generatePriceHistory, generateForecast, addDays } from './utils';
+import { findAirport } from './airports';
 
 // ─── Prediction Mock ──────────────────────────────────────────────────────────
 
@@ -277,6 +278,37 @@ export const mockABTests: ABTest[] = [
 
 // ─── Dynamic Prediction Generator ────────────────────────────────────────────
 
+// Route-aware base price ranges [min, max] in EUR (one-way equivalent used for A/R)
+const ROUTE_PRICE_RANGES: Record<string, [number, number]> = {
+  'Europe_Europe':    [45,  160],
+  'Europe_Afrique':   [80,  220],
+  'Afrique_Europe':   [80,  220],
+  'Afrique_Afrique':  [120, 300],
+  'Europe_M-Orient':  [160, 380],
+  'M-Orient_Europe':  [160, 380],
+  'M-Orient_Asie':    [200, 450],
+  'Asie_M-Orient':    [200, 450],
+  'Europe_Asie':      [360, 780],
+  'Asie_Europe':      [360, 780],
+  'Europe_Amériques': [380, 820],
+  'Amériques_Europe': [380, 820],
+  'Amériques_Asie':   [500, 1000],
+  'Europe_Océanie':   [850, 1300],
+  'Océanie_Europe':   [850, 1300],
+};
+
+function getRouteBasePrice(origin: string, dest: string, seed: number): number {
+  const oAp = findAirport(origin);
+  const dAp = findAirport(dest);
+  const oRegion = oAp?.region ?? 'Europe';
+  const dRegion = dAp?.region ?? 'Europe';
+  const key = `${oRegion}_${dRegion}`;
+  const range = ROUTE_PRICE_RANGES[key] ?? [200, 600];
+  const [min, max] = range;
+  // Deterministic price within the range
+  return Math.round(min + ((seed * 13 + 7) % (max - min)));
+}
+
 export function generatePrediction(params: {
   origin: string;
   destination: string;
@@ -287,7 +319,7 @@ export function generatePrediction(params: {
   const seed = `${origin}${destination}`.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   const trends = ['BUY', 'WAIT', 'RISK'] as const;
   const trend = trends[seed % 3];
-  const basePrice = 150 + (seed % 12) * 70;
+  const basePrice = getRouteBasePrice(origin, destination, seed);
   const prob = 55 + (seed % 35);
   const conf = 65 + (seed % 25);
   const absDelta = 4 + (seed % 18);

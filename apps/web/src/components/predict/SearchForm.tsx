@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeftRight, Clock, Luggage } from 'lucide-react';
+import { ArrowLeftRight, Clock, Luggage, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { AirportInput } from '@/components/ui/AirportInput';
 import type { Airport } from '@/lib/airports';
@@ -63,6 +63,43 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 5,
   display: 'block',
 };
+
+function DateInput({ label, value, onChange, min }: { label: string; value: string; onChange: (v: string) => void; min?: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="flex-1 min-w-[140px]">
+      <label style={labelStyle}>{label}</label>
+      <div
+        className="relative cursor-pointer"
+        onClick={() => ref.current?.showPicker?.()}
+        style={{ ...selectStyle, padding: 0, display: 'flex', alignItems: 'center' }}
+      >
+        <input
+          ref={ref}
+          type="date"
+          value={value}
+          min={min}
+          onChange={e => onChange(e.target.value)}
+          style={{
+            ...selectStyle,
+            border: 'none',
+            background: 'transparent',
+            flex: 1,
+            paddingRight: 34,
+            colorScheme: 'dark',
+            cursor: 'pointer',
+          }}
+          onClick={e => e.stopPropagation()}
+        />
+        <CalendarDays
+          size={14}
+          className="absolute right-2 pointer-events-none"
+          style={{ color: 'var(--accent-blue)' }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', onSearch, loading }: SearchFormProps) {
   const [origin, setOrigin] = useState(initialOrigin);
@@ -156,29 +193,10 @@ export function SearchForm({ initialOrigin = 'CDG', initialDestination = 'JFK', 
           />
         </div>
 
-        {/* Departure date */}
-        <div className="flex-1 min-w-[140px]">
-          <label style={labelStyle}>Date départ</label>
-          <input
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-            style={{ ...selectStyle, padding: '9px 10px' }}
-          />
-        </div>
+        <DateInput label="Date départ" value={date} onChange={setDate} />
 
-        {/* Return date */}
         {tripType === 'round-trip' && (
-          <div className="flex-1 min-w-[140px]">
-            <label style={labelStyle}>Date retour</label>
-            <input
-              type="date"
-              value={returnDate}
-              min={date}
-              onChange={e => setReturnDate(e.target.value)}
-              style={{ ...selectStyle, padding: '9px 10px' }}
-            />
-          </div>
+          <DateInput label="Date retour" value={returnDate} onChange={setReturnDate} min={date} />
         )}
       </div>
 

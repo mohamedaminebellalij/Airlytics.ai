@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Mail, Smartphone, Check } from 'lucide-react';
+import { Bell, Mail, Smartphone, Check, CalendarCheck, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { PredictionResult } from '@airlytics/types';
 import { formatPrice } from '@/lib/utils';
@@ -59,19 +59,54 @@ export function TrackPanel({ prediction }: TrackPanelProps) {
             key="tracked"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 py-3 px-4 rounded-md"
-            style={{ background: 'var(--buy-dim)', border: '1px solid var(--buy-border)' }}
+            className="space-y-3"
           >
-            <Check size={18} style={{ color: 'var(--buy)' }} />
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--buy)' }}>Vol suivi !</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Alerte à {formatPrice(threshold)} —{' '}
-                {channels.email ? `📧 ${email}` : ''}
-                {channels.email && channels.push ? ' + ' : ''}
-                {channels.push ? '📱 Push' : ''}
-              </p>
+            {/* Success banner */}
+            <div className="flex items-center gap-3 py-3 px-4 rounded-md"
+                 style={{ background: 'var(--buy-dim)', border: '1px solid var(--buy-border)' }}>
+              <Check size={18} style={{ color: 'var(--buy)' }} />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--buy)' }}>
+                  Vol suivi — {prediction.route}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  Alerte activée sous {formatPrice(threshold)}
+                </p>
+              </div>
             </div>
+
+            {/* Email confirmation details */}
+            {channels.email && (
+              <div className="space-y-2 text-xs px-1">
+                <div className="flex items-start gap-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <Mail size={12} className="mt-0.5 shrink-0" style={{ color: 'var(--accent-blue)' }} />
+                  <span>
+                    Email de confirmation envoyé à{' '}
+                    <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <Clock size={12} className="mt-0.5 shrink-0" style={{ color: 'var(--accent-blue)' }} />
+                  <span>1 email/jour si le prix descend sous {formatPrice(threshold)}</span>
+                </div>
+                <div className="flex items-start gap-2.5" style={{ color: 'var(--text-secondary)' }}>
+                  <CalendarCheck size={12} className="mt-0.5 shrink-0" style={{ color: 'var(--accent-blue)' }} />
+                  <span>
+                    Surveillance jusqu&apos;au départ ·{' '}
+                    Notification automatique si le vol disparaît
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Untrack button */}
+            <button
+              onClick={() => { setTracked(false); setEmail(''); }}
+              className="text-xs w-full text-center mt-1"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Annuler le suivi
+            </button>
           </motion.div>
         ) : (
           <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">

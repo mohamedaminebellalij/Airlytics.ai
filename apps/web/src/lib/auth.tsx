@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     if (!email || password.length < 6) return false;
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    if (isAdmin && password !== 'airlytics@2026') return false;
     const u: AuthUser = {
       email,
       name: email.split('@')[0].replace(/[._]/g, ' '),
