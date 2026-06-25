@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Web (Next.js) ──────────────────────────────────────────────────────────
+  web:
+    name: Web — Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      # Install all workspace packages from the monorepo root
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+        working-directory: apps/web
+      - name: Type Check
+        run: npm run type-check
+        working-directory: apps/web
+
+  # ── Web Build ──────────────────────────────────────────────────────────────
+  web-build:
+    name: Web — Build
+    runs-on: ubuntu-latest
+    needs: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        working-directory: apps/web
+
+  # ── AI Service (Python) ────────────────────────────────────────────────────
+  ai:
+    name: AI Service — Lint & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install fastapi pydantic httpx pytest pytest-asyncio
+      - run: python -c "import main; print('AI service imports OK')"
+
+  # ── Docker Compose Validation ──────────────────────────────────────────────
+  docker:
+    name: Docker Compose — Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
