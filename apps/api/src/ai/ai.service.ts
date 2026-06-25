@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import axios from 'axios';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -45,15 +44,15 @@ export class AiService {
       if (!apiKey) continue;
 
       try {
-        const response = await axios.post(
-          provider.url,
-          { model: provider.model, messages: allMessages, max_tokens: 1024, temperature: 0.7 },
-          {
-            headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            timeout: 30000,
-          },
-        );
-        return response.data.choices[0].message.content;
+        const res = await fetch(provider.url, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: provider.model, messages: allMessages, max_tokens: 1024, temperature: 0.7 }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!res.ok) continue;
+        const data = await res.json() as { choices: { message: { content: string } }[] };
+        return data.choices[0].message.content;
       } catch {
         continue;
       }
