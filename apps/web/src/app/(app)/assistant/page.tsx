@@ -22,6 +22,15 @@ const chipConfig: Record<VerdictChip, { label: string; icon: React.ReactNode; co
   ACT_NOW: { label: 'ACHETER',  icon: <TrendingDown size={10} />, color: '--buy' },
 };
 
+function extractChips(text: string): VerdictChip[] {
+  const chips: VerdictChip[] = [];
+  const lower = text.toLowerCase();
+  if (/acheter|buy|réserver|réservez|réservation|bonne affaire|deal/.test(lower)) chips.push('ACT_NOW');
+  if (/attendre|wait|patience|encore|prix va baisser|baisse attendue/.test(lower)) chips.push('WAIT');
+  if (/explorer|chercher|comparer|découvrir|alternative/.test(lower)) chips.push('EXPLORER');
+  return chips.length ? chips : ['EXPLORER'];
+}
+
 interface ParsedAirport { iata: string; name: string; pos: number }
 
 function extractAirports(text: string): ParsedAirport[] {
@@ -317,47 +326,66 @@ export default function AssistantPage() {
     setInput('');
     setThinking(true);
 
-    // Simulate web search for route or destination queries
     const airports = extractAirports(text);
-    const needsSearch = airports.length >= 1 || text.toLowerCase().includes('prix') || text.toLowerCase().includes('vol');
+    const needsSearch = airports.length >= 1 || /prix|vol|billet|partir|budget/i.test(text);
 
     if (needsSearch) {
       setIsSearching(true);
-      await new Promise(r => setTimeout(r, 800));
+      await new Promise(r => setTimeout(r, 600));
       setIsSearching(false);
     }
 
-    await new Promise(r => setTimeout(r, needsSearch ? 700 : 1000));
-
-    // Capture awaitingPeriodFor before calling generateResponse (which may set it to null)
     const currentAwaiting = awaitingPeriodFor;
     let newAwaitingPeriodFor: { origin: string; dest: string; originName: string; destName: string } | null = null;
 
-    // Check if we need to set awaitingPeriodFor
     if (!currentAwaiting) {
       const detectedAirports = extractAirports(text);
       if (detectedAirports.length >= 2 && !extractPeriod(text)) {
         newAwaitingPeriodFor = {
-          origin: detectedAirports[0].iata,
-          dest: detectedAirports[1].iata,
-          originName: detectedAirports[0].name,
-          destName: detectedAirports[1].name,
+          origin: detectedAirports[0].iata, dest: detectedAirports[1].iata,
+          originName: detectedAirports[0].name, destName: detectedAirports[1].name,
         };
       }
     }
 
-    const response = generateResponse(text, currentAwaiting, () => {});
+    // Build conversation history for AI
+    const history = messages.slice(-10).map(m => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+    history.push({ role: 'user', content: text });
+
+    let content: string;
+    let chips: VerdictChip[] | undefined;
+
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
+      const res = await fetch(`${apiBase}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        content = data.content;
+        chips = extractChips(content);
+      } else {
+        throw new Error('API error');
+      }
+    } catch {
+      // Fallback: local deterministic response
+      const fallback = generateResponse(text, currentAwaiting, () => {});
+      content = fallback.content;
+      chips = fallback.chips;
+    }
 
     setAwaitingPeriodFor(newAwaitingPeriodFor);
 
-    const assistantMsg: ChatMessage = {
-      id: `a-${Date.now()}`,
-      role: 'assistant',
-      content: response.content,
-      chips: response.chips,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages(prev => [...prev, assistantMsg]);
+    setMessages(prev => [...prev, {
+      id: `a-${Date.now()}`, role: 'assistant',
+      content, chips, createdAt: new Date().toISOString(),
+    }]);
     setThinking(false);
   };
 
